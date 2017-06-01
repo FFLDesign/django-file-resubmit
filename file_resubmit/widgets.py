@@ -1,4 +1,11 @@
 # -*- coding: utf-8 -*-
+
+# TODO: This is still broken because Widgets are often only instantiated once
+# per form class and so cannot be used to maintain multiple different states for
+# multiple instances of a form.  Instead, maybe will try redesigning this to
+# make value_from_datadict return a special type that holds the cache key so
+# output_extra_data can access that from its argument, or something.
+
 import os
 import uuid
 
@@ -13,25 +20,40 @@ from .cache import FileCache
 class ResubmitBaseWidget(ClearableFileInput):
     def __init__(self, attrs=None, field_type=None):
         super(ResubmitBaseWidget, self).__init__(attrs=attrs)
+        self.called_value_from_datadict = 0
+        self.input_name = None
         self.cache_key = ''
         self.field_type = field_type
 
     def value_from_datadict(self, data, files, name):
+        # Note: This can be called more than once.
+        self.called_value_from_datadict += 1
         upload = super(ResubmitBaseWidget, self).value_from_datadict(
             data, files, name)
         if upload == FILE_INPUT_CONTRADICTION:
             return upload
 
-        self.input_name = "%s_cache_key" % name
-        self.cache_key = data.get(self.input_name, "")
+        input_name = "%s_cache_key" % name
+        if not self.input_name:
+            self.input_name = input_name
+        else:
+            assert input_name == self.input_name
 
-        if name in files:
-            self.cache_key = self.random_key()[:10]
-            upload = files[name]
-            FileCache().set(self.cache_key, upload)
-        elif self.cache_key:
-            restored = FileCache().get(self.cache_key, name)
+        given_key = data.get(self.input_name)
+
+        if upload:
+            # A file is uploaded, so use it regardless if there was a previous.
+            if self.called_value_from_datadict == 1:
+                if self.cache_key:
+                    FileCache().delete(self.cache_key)
+                self.cache_key = self.random_key()[:10]
+                FileCache().set(self.cache_key, upload)
+        elif given_key:
+            if self.cache_key:
+                assert given_key == self.cache_key
+            restored = FileCache().get(given_key, name)
             if restored:
+                self.cache_key = given_key
                 upload = restored
                 files[name] = upload
         return upload
