@@ -15,11 +15,12 @@ from django.core.files.uploadedfile import InMemoryUploadedFile
 
 
 class FileCache(object):
-    def __init__(self):
-        self.backend = self.get_backend()
+    def __init__(self, cache_name='file_resubmit'):
+        self.cache_name = cache_name
 
-    def get_backend(self):
-        return get_cache('file_resubmit')
+    @property
+    def backend(self):
+        return get_cache(self.cache_name)
 
     def set(self, key, upload):
         state = {

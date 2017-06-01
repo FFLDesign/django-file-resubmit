@@ -18,12 +18,13 @@ from django.utils.safestring import mark_safe
 from .cache import FileCache
 
 class ResubmitBaseWidget(ClearableFileInput):
-    def __init__(self, attrs=None, field_type=None):
+    def __init__(self, attrs=None, field_type=None, cache=FileCache):
         super(ResubmitBaseWidget, self).__init__(attrs=attrs)
         self.called_value_from_datadict = 0
         self.input_name = None
         self.cache_key = ''
         self.field_type = field_type
+        self.cache = cache()
 
     def value_from_datadict(self, data, files, name):
         # Note: This can be called more than once.
@@ -45,13 +46,13 @@ class ResubmitBaseWidget(ClearableFileInput):
             # A file is uploaded, so use it regardless if there was a previous.
             if self.called_value_from_datadict == 1:
                 if self.cache_key:
-                    FileCache().delete(self.cache_key)
+                    self.cache.delete(self.cache_key)
                 self.cache_key = self.random_key()[:10]
-                FileCache().set(self.cache_key, upload)
+                self.cache.set(self.cache_key, upload)
         elif given_key:
             if self.cache_key:
                 assert given_key == self.cache_key
-            restored = FileCache().get(given_key, name)
+            restored = self.cache.get(given_key, name)
             if restored:
                 self.cache_key = given_key
                 upload = restored
