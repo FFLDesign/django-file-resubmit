@@ -15,7 +15,7 @@ from django.conf import settings
 from django.forms import ClearableFileInput
 from django.utils.safestring import mark_safe
 
-from .cache import FileCache
+from .cache import FileCache, MediaFileCache
 
 class ResubmitBaseWidget(ClearableFileInput):
     def __init__(self, attrs=None, field_type=None, cache=FileCache):
@@ -47,7 +47,7 @@ class ResubmitBaseWidget(ClearableFileInput):
             if self.called_value_from_datadict == 1:
                 if self.cache_key:
                     self.cache.delete(self.cache_key)
-                self.cache_key = self.random_key()[:10]
+                self.cache_key = self.random_key()
                 self.cache.set(self.cache_key, upload)
         elif given_key:
             if self.cache_key:
@@ -89,3 +89,12 @@ class ResubmitFileWidget(ResubmitBaseWidget):
 
 class ResubmitImageWidget(ResubmitFileWidget):
     pass
+
+
+class MediaResubmitFileWidget(ResubmitFileWidget):
+    def __init__(self, *pos, **kw):
+        super(MediaResubmitFileWidget, self).__init__(cache=MediaFileCache, *pos, **kw)
+
+class MediaResubmitImageWidget(ResubmitImageWidget):
+    def __init__(self, *pos, **kw):
+        super(MediaResubmitImageWidget, self).__init__(cache=MediaFileCache, *pos, **kw)
