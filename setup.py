@@ -11,14 +11,15 @@ from setuptools import setup, find_packages
 
 setup(
     name     = 'django-file-resubmit',
-    version  = '0.5.0',
     packages = find_packages(),
     requires = ['python (>= 2.7)', 'django (>= 1.5)'],
-    description  = 'Keeps submited files when validation errors occur.',
-    author       = 'Ilya Shalyapin',
-    author_email = 'ishalyapin@gmail.com',
-    url          = 'https://github.com/un1t/django-file-resubmit',
-    download_url = 'https://github.com/un1t/django-file-resubmit/tarball/master',
+    description  = 'Keeps submitted files when validation errors occur.',
+    author       = 'Ilya Shalyapin and others',
+    # TODO: Don't merge these into master branch.
+    version  = '6.6.6',
+    author_email = 'derick@ffldesign.com',
+    url          = 'https://github.com/FFLDesign/django-file-resubmit/tree/ffldesign',
+    download_url = 'https://github.com/FFLDesign/django-file-resubmit/archive/ffldesign.zip',
     license      = 'MIT License',
     keywords     = 'django form filefield resubmit',
     classifiers  = [
