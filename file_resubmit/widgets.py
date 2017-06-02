@@ -31,7 +31,7 @@ class ResubmitBaseWidget(ClearableFileInput):
         self.called_value_from_datadict += 1
         upload = super(ResubmitBaseWidget, self).value_from_datadict(
             data, files, name)
-        if upload == FILE_INPUT_CONTRADICTION:
+        if upload is False or upload == FILE_INPUT_CONTRADICTION:
             return upload
 
         input_name = "%s_cache_key" % name
