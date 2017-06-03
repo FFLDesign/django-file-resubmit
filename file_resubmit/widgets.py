@@ -11,19 +11,17 @@ import uuid
 
 from django import forms
 from django.forms.widgets import FILE_INPUT_CONTRADICTION
-from django.conf import settings
 from django.forms import ClearableFileInput
 from django.utils.safestring import mark_safe
 
 from .cache import FileCache, MediaFileCache
 
 class ResubmitBaseWidget(ClearableFileInput):
-    def __init__(self, attrs=None, field_type=None, cache=FileCache):
+    def __init__(self, attrs=None, cache=FileCache):
         super(ResubmitBaseWidget, self).__init__(attrs=attrs)
         self.called_value_from_datadict = 0
         self.input_name = None
         self.cache_key = ''
-        self.field_type = field_type
         self.cache = cache()
 
     def value_from_datadict(self, data, files, name):
