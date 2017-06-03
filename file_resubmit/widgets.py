@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
 
-# TODO: This is still broken because Widgets are often only instantiated once
-# per form class and so cannot be used to maintain multiple different states for
-# multiple instances of a form.  Instead, maybe will try redesigning this to
-# make value_from_datadict return a special type that holds the cache key so
-# output_extra_data can access that from its argument, or something.
-
 import os
 import uuid
 
@@ -17,55 +11,59 @@ from django.utils.safestring import mark_safe
 from .cache import FileCache, MediaFileCache
 
 class ResubmitBaseWidget(ClearableFileInput):
+    # Note the strangeness that, per Django's design for form fields and
+    # widgets, new instances of this class are created by shallow-copying
+    # prototype instances declared for form class fields, and __init__ is rarely
+    # called usually only for form class declarations.
     def __init__(self, attrs=None, cache=FileCache):
         super(ResubmitBaseWidget, self).__init__(attrs=attrs)
-        self.called_value_from_datadict = 0
-        self.input_name = None
-        self.cache_key = ''
         self.cache = cache()
 
+    @staticmethod
+    def cache_key_input_name(name):
+        return "%s_cache_key" % name
+
     def value_from_datadict(self, data, files, name):
-        # Note: This can be called more than once.
-        self.called_value_from_datadict += 1
+        # Note: This can be called more than once for the same field of a form instance.
         upload = super(ResubmitBaseWidget, self).value_from_datadict(
             data, files, name)
         if upload is False or upload == FILE_INPUT_CONTRADICTION:
             return upload
+        if hasattr(upload, '_file_resubmit'):
+            # value_from_datadict is being called again for the same
+            # arguments.  We already handled it the first time.
+            return upload
 
-        input_name = "%s_cache_key" % name
-        if not self.input_name:
-            self.input_name = input_name
-        else:
-            assert input_name == self.input_name
-
-        given_key = data.get(self.input_name)
+        given_key = data.get(self.cache_key_input_name(name))
 
         if upload:
-            # A file is uploaded, so use it regardless if there was a previous.
-            if self.called_value_from_datadict == 1:
-                if self.cache_key:
-                    self.cache.delete(self.cache_key)
-                self.cache_key = self.random_key()
-                self.cache.set(self.cache_key, upload)
+            # A file is uploaded, so use it regardless if there is a given_key for a previous.
+            cache_key = self.random_key()
+            self.cache.set(cache_key, upload)
+            if given_key:
+                self.cache.delete(given_key)
         elif given_key:
-            if self.cache_key:
-                assert given_key == self.cache_key
             restored = self.cache.get(given_key, name)
             if restored:
-                self.cache_key = given_key
+                cache_key = given_key
                 upload = restored
                 files[name] = upload
+
+        if upload:
+            # Add a new attribute to the "value" object for output_extra_data to use.
+            upload._file_resubmit = {'name': name, 'cache_key': cache_key}
         return upload
 
     def random_key(self):
+        # It is important that the keys be unguessable to thwart malicious users.
         return uuid.uuid4().hex
 
     def output_extra_data(self, value):
         output = ''
-        if self.cache_key:
+        if hasattr(value, '_file_resubmit'):
             output += forms.HiddenInput().render(
-                self.input_name,
-                self.cache_key,
+                self.cache_key_input_name(value._file_resubmit['name']),
+                value._file_resubmit['cache_key'],
                 {},
             )
         return output
