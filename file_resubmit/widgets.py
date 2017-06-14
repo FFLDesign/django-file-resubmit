@@ -15,9 +15,10 @@ class ResubmitBaseWidget(ClearableFileInput):
     # widgets, new instances of this class are created by shallow-copying
     # prototype instances declared for form class fields, and __init__ is rarely
     # called usually only for form class declarations.
-    def __init__(self, attrs=None, cache=FileCache):
+    def __init__(self, attrs=None, cache=FileCache, show_filename=False):
         super(ResubmitBaseWidget, self).__init__(attrs=attrs)
         self.cache = cache()
+        self.show_filename = show_filename
 
     @staticmethod
     def cache_key_input_name(name):
@@ -61,6 +62,8 @@ class ResubmitBaseWidget(ClearableFileInput):
     def output_extra_data(self, value):
         output = ''
         if hasattr(value, '_file_resubmit'):
+            if self.show_filename:
+                output += ' ' + self.filename_from_value(value)
             output += forms.HiddenInput().render(
                 self.cache_key_input_name(value._file_resubmit['name']),
                 value._file_resubmit['cache_key'],

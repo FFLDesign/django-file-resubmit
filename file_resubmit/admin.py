@@ -19,10 +19,14 @@ class AdminResubmitBaseWidget(ResubmitBaseWidget, BaseWidget):
 
 
 class AdminResubmitFileWidget(ResubmitFileWidget):
-    pass
+    def __init__(self, *pos, **kw):
+        super(AdminResubmitFileWidget, self).__init__(show_filename=True, *pos, **kw)
 
 
 class AdminResubmitImageWidget(AdminResubmitBaseWidget):
+    def __init__(self, *pos, **kw):
+        super(AdminResubmitImageWidget, self).__init__(show_filename=True, *pos, **kw)
+
     def render(self, name, value, attrs=None):
         output = super(AdminResubmitImageWidget, self).render(
             name, value, attrs)
