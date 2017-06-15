@@ -11,6 +11,9 @@ from django.utils.safestring import mark_safe
 from .cache import FileCache, MediaFileCache
 
 class ResubmitBaseWidget(ClearableFileInput):
+
+    cache_key_input_suffix = '_cache_key'
+
     # Note the strangeness that, per Django's design for form fields and
     # widgets, new instances of this class are created by shallow-copying
     # prototype instances declared for form class fields, and __init__ is rarely
@@ -20,9 +23,8 @@ class ResubmitBaseWidget(ClearableFileInput):
         self.cache = cache()
         self.show_filename = show_filename
 
-    @staticmethod
-    def cache_key_input_name(name):
-        return "%s_cache_key" % name
+    def cache_key_input_name(self, name):
+        return name + self.cache_key_input_suffix
 
     def value_from_datadict(self, data, files, name):
         # Note: This can be called more than once for the same field of a form instance.
@@ -93,7 +95,9 @@ class ResubmitImageWidget(ResubmitFileWidget):
 class MediaResubmitFileWidget(ResubmitFileWidget):
     def __init__(self, *pos, **kw):
         super(MediaResubmitFileWidget, self).__init__(cache=MediaFileCache, *pos, **kw)
+        self.media_subdir = self.cache.subdir
 
 class MediaResubmitImageWidget(ResubmitImageWidget):
     def __init__(self, *pos, **kw):
         super(MediaResubmitImageWidget, self).__init__(cache=MediaFileCache, *pos, **kw)
+        self.media_subdir = self.cache.subdir

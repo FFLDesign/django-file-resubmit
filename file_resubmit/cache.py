@@ -76,6 +76,7 @@ class MediaFileCache(object):
         self.dir = path.abspath(path.join(media_root, subdir))
         if not path.exists(self.dir):
             os.mkdir(self.dir)
+        self.media_root, self.subdir = media_root, subdir
 
     def set(self, key, upload):
         kd = path.join(self.dir, key)
