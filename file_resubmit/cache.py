@@ -27,7 +27,12 @@ def copy_file_obj(src, dest=None):
     return dest or d.read()
 
 
-class FileCache(object):
+class BaseCache(object):
+    def delete_by_value(self, value):
+        self.delete(value._file_resubmit['cache_key'])
+
+
+class FileCache(BaseCache):
     def __init__(self, cache_name='file_resubmit'):
         self.cache_name = cache_name
 
@@ -65,7 +70,7 @@ class FileCache(object):
         self.backend.delete(key)
 
 
-class MediaFileCache(object):
+class MediaFileCache(BaseCache):
     """Store the uploaded files in MEDIA_ROOT so they can be referenced by web pages."""
 
     pickled_attributes = ['name', 'size', 'content_type', 'charset']
